@@ -500,6 +500,7 @@ sys_exec(void)
 {
   char path[MAXPATH], *argv[MAXARG];
   int i;
+  int j;
   uint64 uargv, uarg;
 
   if(argstr(0, path, MAXPATH) < 0 || argaddr(1, &uargv) < 0){
@@ -527,7 +528,15 @@ sys_exec(void)
   }
 
   if(myproc()->tracing) {
-    printf("\n[%d]sys_exec(%s, %s)", myproc()->pid, path, argv[0]);
+    printf("\n[%d]sys_exec(%s", myproc()->pid, path);
+    
+    j = 0;
+    while(argv[j] != 0) {
+      printf(", %s", argv[j]);
+      j++;
+    }
+
+    printf(")");
   }
 
   int ret = exec(path, argv);
