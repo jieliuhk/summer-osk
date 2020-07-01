@@ -143,19 +143,16 @@ sys_traceon(void)
 uint64
 sys_ps(void)
 {
-    struct pinfo *pi;
+    uint64 piaddr;
 
     if(myproc()->tracing) {
         printf("[%d]ps", myproc()->pid);
     }
 
-    printf("before get addr");
-    if(argaddr(0, (void*)&pi) < 0) {
+    if(argaddr(0, &piaddr) < 0) {
 	return -1;
     }
 
-    printf("before kps");
-    kps(pi);
-    printf("after kps");
+    kps(piaddr);
     return 0;
 }

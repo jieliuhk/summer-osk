@@ -683,23 +683,26 @@ void traceon (void)
 }
 
 //ps kernal code
-void kps (struct pinfo *pi)
+void kps (uint64 piaddr)
 {
     struct proc *p;
+    struct pinfo kpi;
     int i = 0;
 
     for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
         
 	if(p->state != UNUSED) {
-            pi->proc[i].pid = p->pid;
-            pi->proc[i].sz = p->sz;
-            safestrcpy(pi->proc[i].name, p->name, 16);
+            kpi.proc[i].pid = p->pid;
+            kpi.proc[i].sz = p->sz;
+            safestrcpy(kpi.proc[i].name, p->name, 16);
             i++;
         }
 
         release(&p->lock);
     }
 
-    pi->count = i;
+    kpi.count = i;
+
+    copyout(myproc()->pagetable, piaddr, (void *)&kpi, sizeof(struct pinfo));
 }
