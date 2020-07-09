@@ -132,7 +132,7 @@ fileread(struct file *f, uint64 addr, int n)
 // Write to file f.
 // addr is a user virtual address.
 int
-filewrite(struct file *f, uint64 addr, int n)
+filewrite(struct file *f, uint64 addr, int is_user, int n)
 {
   int r, ret = 0;
 
@@ -144,7 +144,7 @@ filewrite(struct file *f, uint64 addr, int n)
   } else if(f->type == FD_DEVICE){
     if(f->major < 0 || f->major >= NDEV || !devsw[f->major].write)
       return -1;
-    ret = devsw[f->major].write(1, addr, n);
+    ret = devsw[f->major].write(is_user, addr, n);
   } else if(f->type == FD_INODE){
     // write a few blocks at a time to avoid exceeding
     // the maximum log transaction size, including
@@ -161,7 +161,7 @@ filewrite(struct file *f, uint64 addr, int n)
 
       begin_op();
       ilock(f->ip);
-      if ((r = writei(f->ip, 1, addr + i, f->off, n1)) > 0)
+      if ((r = writei(f->ip, is_user, addr + i, f->off, n1)) > 0)
         f->off += r;
       iunlock(f->ip);
       end_op();

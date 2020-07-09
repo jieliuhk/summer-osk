@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "pinfo.h"
 #include "defs.h"
+#include "stat.h"
 
 struct cpu cpus[NCPU];
 
@@ -605,7 +606,7 @@ kill(int pid)
     acquire(&p->lock);
     if(p->pid == pid){
       p->killed = 1;
-      if(p->state == SLEEPING){
+      if(p->state == SLEEPING || p->state == SUSPENDED){
         // Wake process from sleep().
         p->state = RUNNABLE;
       }
@@ -658,7 +659,8 @@ procdump(void)
   [SLEEPING]  "sleep ",
   [RUNNABLE]  "runble",
   [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
+  [ZOMBIE]    "zombie",
+  [SUSPENDED] "suspended"
   };
   struct proc *p;
   char *state;
@@ -706,3 +708,89 @@ void kps (uint64 piaddr)
 
     copyout(myproc()->pagetable, piaddr, (void *)&kpi, sizeof(struct pinfo));
 }
+
+int ksuspend (int pid, struct file *f) {
+    struct header hdr;
+    struct proc *dstp;
+    int found = 0;
+
+    printf("in suspend(%d)", pid);
+
+    for(dstp = proc; dstp < &proc[NPROC]; dstp++){
+        acquire(&dstp->lock);
+        if(dstp->pid == pid){
+            dstp->state = SUSPENDED;
+            found = 1;
+	    release(&dstp->lock);
+	    break;
+        }
+	release(&dstp->lock);
+    }
+    
+    if(!found) {
+      return -1;
+    }
+
+    hdr.mem_sz = dstp->sz;
+    hdr.code_sz = dstp->sz - 2 * PGSIZE;
+    hdr.stack_sz = PGSIZE;
+    hdr.tracing = dstp->tracing;
+    strncpy(hdr.name, dstp->name, 16);
+
+    pagetable_t tmp = myproc()->pagetable;
+    myproc()->pagetable = dstp->pagetable;
+
+    filewrite(f, (uint64)&hdr, 0, sizeof(struct header));
+    filewrite(f, (uint64) dstp->tf, 0, sizeof(struct trapframe));
+    filewrite(f, (uint64)0, 1, hdr.code_sz);
+    filewrite(f, (uint64) (hdr.code_sz + PGSIZE), 1, PGSIZE);
+    myproc()->pagetable = tmp;
+
+    kill(pid);
+
+    return 0;
+}
+
+int kresume (char *path) {
+    //struct file *f;
+    //struct header hdr;
+    //pde_t *pgdir;
+//    pde_t *oldpgdir;
+
+    printf("kresume(%s) excuting", path);
+
+    //pgdir = 0;
+    //Allocate new pgdir
+    //if((pgdir = kpt_alloc()) == 0) {
+    //    return -1;
+    //}
+
+    //read meta data from saved file to create new process
+    //f = open(path, O_RDONLY);
+
+    //if(f == 0) {
+    //    return -1;
+    //}
+
+    //fileread(f, (char *) &hdr, sizeof(hdr));
+
+    //create new process from file and meta data
+    //allocuvm(pgdir, 0, hdr.sz);
+    //loaduvm(pgdir, 0, f->ip, sizeof(hdr), hdr.sz - 8192);
+    //loaduvm(pgdir, (char *)(hdr.sz - 8192), f->ip, sizeof(hdr) + hdr.sz - 8192, 8192);
+    //clearpteu(pgdir, (char* )(hdr.sz - 8192));
+
+    //proc->sz = hdr.sz;
+    //proc->tf->sp_usr = hdr.sp_usr;
+    //proc->tracing = hdr.tracing;
+    //strncpy(proc->name, hdr.name, 16);
+
+    //oldpgdir = proc->pgdir;
+    //proc->pgdir = pgdir;
+
+    //switchuvm(proc);
+    //freevm(oldpgdir);
+
+    return 0;
+}
+

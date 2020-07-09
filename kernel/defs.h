@@ -33,7 +33,7 @@ struct file*    filedup(struct file*);
 void            fileinit(void);
 int             fileread(struct file*, uint64, int n);
 int             filestat(struct file*, uint64 addr);
-int             filewrite(struct file*, uint64, int n);
+int             filewrite(struct file*, uint64, int is_user, int n);
 
 // fs.c
 void            fsinit(int);
@@ -106,6 +106,8 @@ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 void		traceon(void);
 void		kps(uint64);
+int             ksuspend(int, struct file *);
+int 		kresume(char *);
 
 // swtch.S
 void            swtch(struct context*, struct context*);

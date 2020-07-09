@@ -38,4 +38,6 @@ entry("sleep");
 entry("uptime");
 entry("traceon");
 entry("ps");
+entry("suspend");
+entry("resume");
 

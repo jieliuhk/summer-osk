@@ -136,7 +136,7 @@ sys_write(void)
       printf(", %d)", n);
   }
 
-  return filewrite(f, p, n);
+  return filewrite(f, p, 1, n);
 }
 
 uint64
@@ -587,4 +587,21 @@ sys_pipe(void)
     return -1;
   }
   return 0;
+}
+
+int sys_suspend(void)
+{
+    int pid;
+    char path[16];
+    struct file *fp;
+
+    if(argint(0, &pid) < 0 || argfd(1, 0, &fp) < 0) {
+        return -1;
+    }
+
+    if(myproc()->tracing) {
+        printf("\n[%d]sys_suspendproc(%d, %s)", myproc()->pid, pid, path);
+    }
+
+    return ksuspend(pid, fp);
 }

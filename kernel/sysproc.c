@@ -156,3 +156,20 @@ sys_ps(void)
     kps(piaddr);
     return 0;
 }
+
+uint64
+sys_resume(void)
+{
+    char path[16];
+
+    if(argstr(0, path, 16) < 0) {
+        return -1;
+    }
+
+    if(myproc()->tracing) {
+        printf("\n[%d]sys_resumeproc(%s)", myproc()->pid, path);
+    }
+
+    return kresume(path);
+}
+
