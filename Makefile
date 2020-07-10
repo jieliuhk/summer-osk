@@ -135,6 +135,7 @@ UPROGS=\
 	$U/_suspend\
 	$U/_resume\
 	$U/_count\
+	$U/_fibi\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
