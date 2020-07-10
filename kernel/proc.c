@@ -787,8 +787,6 @@ int kresume (char *path) {
     int off = 0;
     int sz = 0;
 
-    printf("kresume(%s) excuting\n", path);
-
     begin_op();
 
     if((ip = namei(path)) == 0){
