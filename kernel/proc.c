@@ -878,6 +878,7 @@ int kresume (char *path) {
     oldsz = p->sz;
     p->pagetable = pagetable;
     p->sz = hdr.mem_sz;
+    strncpy(p->name, hdr.name, 16);
     proc_freepagetable(oldpagetable, oldsz);
 
     return 0;
