@@ -136,6 +136,7 @@ UPROGS=\
 	$U/_resume\
 	$U/_count\
 	$U/_fibi\
+	$U/_vctest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
