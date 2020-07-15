@@ -13,11 +13,11 @@ create_vcs(void)
   int i, fd;
   char *dname = "vc0";
 
-  for (i = 0; i < 4; i++) {
-    dname[2] = '0' + i;
+  for (i = 0; i < 9; i++) {
+    dname[2] = '1' + i;
     if ((fd = open(dname, O_RDWR)) < 0){
-      mknod(dname, 2 + i, 0);
-    } else {
+      mknod(dname, 1 + i, 0);
+    } else { 
       close(fd);
     }
   }
@@ -29,7 +29,7 @@ main(void)
   int pid, wpid;
 
   if(open("console", O_RDWR) < 0){
-    mknod("console", 1, 1);
+    mknod("console", 0, 0);
     open("console", O_RDWR);
   }
   dup(0);  // stdout

@@ -57,10 +57,9 @@ struct input {
   uint e;  // Edit index
 };
 
-static int active = 1;
+static int active = 0;
 
-struct input cons1;
-struct input cons2;
+struct input vcons[10];
 struct input *consa;
 
 
@@ -151,7 +150,7 @@ consoleread(struct input *cons, int user_dst, uint64 dst, int n)
 void
 consoleintr(int c)
 {
-  int doconsoleswitch = 0;
+  int move_vconsole = 0;
 
   acquire(&consa->lock);
 
@@ -173,8 +172,13 @@ consoleintr(int c)
       consputc(BACKSPACE);
     }
     break;
-  case C('T'):
-      doconsoleswitch = 1;
+
+  case C('N'):
+      move_vconsole = 1;
+      break;
+
+  case C('B'):
+      move_vconsole = -1;
       break;
 
   default:
@@ -199,67 +203,50 @@ consoleintr(int c)
   
   release(&consa->lock);
   
-  if(doconsoleswitch){
-    if (active == 1){
-      active = 2;
-      consa = &cons2;
-    }else{
-      active = 1;
-      consa = &cons1;
-    } 
-
-    printf("\nActive console now: %d\n", active);
+  if(move_vconsole != 0 && move_vconsole + active >= 0 && move_vconsole + active < 10){
+      active += move_vconsole;
+      consa = &vcons[active];
+      printf("\nActive console now: %d\n", active);
   }
 
 }
 
 int
-cread1(int user_dst, uint64 dst, int n)
+cread(int vc_num, int user_dst, uint64 dst, int n)
 {
-  return consoleread(&cons1, user_dst, dst, n);
+  return consoleread(&vcons[vc_num], user_dst, dst, n);
 }
 
 int
-cwrite1(int user_src, uint64 src, int n)
+cwrite(int vc_num, int user_src, uint64 src, int n)
 {
-  return consolewrite(&cons1, user_src, src, n);
-}
-
-int
-cread2(int user_dst, uint64 dst, int n)
-{
-  return consoleread(&cons2, user_dst, dst, n);
-}
-
-int
-cwrite2(int user_src, uint64 src, int n)
-{
-  return consolewrite(&cons2, user_src, src, n);
+  return consolewrite(&vcons[vc_num], user_src, src, n);
 }
 
 void
 consoleinit(void)
 {
-  initlock(&cons1.lock, "cons1");
-  cons1.r = 0;
-  cons1.w = 0;
-  cons1.e = 0;
+  int i;
+  char *vcname = "cons0";
 
-  initlock(&cons2.lock, "cons2");
-  cons2.r = 0;
-  cons2.w = 0;
-  cons2.e = 0;
+  for(i = 0; i < 10; i++) {
+      vcname[2] = '0' + i;
+      initlock(&vcons[i].lock, vcname);
+      vcons[i].r = 0;
+      vcons[i].w = 0;
+      vcons[i].e = 0;
+  }
 
-  consa = &cons1;
-  active = 1;
+  consa = &vcons[0];
+  active = 0;
 
   uartinit();
 
   // connect read and write system calls
   // to consoleread and consolewrite.
-  devsw[CONSOLE1].read = cread1;
-  devsw[CONSOLE1].write = cwrite1;
-
-  devsw[CONSOLE2].read = cread2;
-  devsw[CONSOLE2].write = cwrite2;
+  
+  for(i = 0; i < 10; i++) {
+      devsw[i].read = cread;
+      devsw[i].write = cwrite;
+  }
 }

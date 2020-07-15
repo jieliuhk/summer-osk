@@ -31,13 +31,9 @@ struct inode {
 
 // map major device number to device functions.
 struct devsw {
-  int (*read)(int, uint64, int);
-  int (*write)(int, uint64, int);
+  int (*read)(int, int, uint64, int);
+  int (*write)(int, int, uint64, int);
 };
 
 extern struct devsw devsw[];
-
-#define CONSOLE 1
-#define CONSOLE1 1
-#define CONSOLE2 2
 
