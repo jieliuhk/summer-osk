@@ -7,17 +7,35 @@
 
 char *argv[] = { "sh", 0 };
 
+void
+create_vcs(void)
+{
+  int i, fd;
+  char *dname = "vc0";
+
+  for (i = 0; i < 9; i++) {
+    dname[2] = '1' + i;
+    if ((fd = open(dname, O_RDWR)) < 0){
+      mknod(dname, 1 + i, 0);
+    } else { 
+      close(fd);
+    }
+  }
+}
+
 int
 main(void)
 {
   int pid, wpid;
 
   if(open("console", O_RDWR) < 0){
-    mknod("console", 1, 1);
+    mknod("console", 0, 0);
     open("console", O_RDWR);
   }
   dup(0);  // stdout
   dup(0);  // stderr
+
+  create_vcs();
 
   for(;;){
     printf("init: starting sh\n");
@@ -36,3 +54,4 @@ main(void)
     }
   }
 }
+

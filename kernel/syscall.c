@@ -106,6 +106,8 @@ extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
 extern uint64 sys_traceon(void);
 extern uint64 sys_ps(void);
+extern uint64 sys_suspend(void);
+extern uint64 sys_resume(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -131,6 +133,8 @@ static uint64 (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_traceon] sys_traceon,
 [SYS_ps]      sys_ps,
+[SYS_suspend] sys_suspend,
+[SYS_resume]  sys_resume,
 };
 
 void

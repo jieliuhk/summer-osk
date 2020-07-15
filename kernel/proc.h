@@ -80,7 +80,7 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
-enum procstate { UNUSED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum procstate { UNUSED, SLEEPING, RUNNABLE, RUNNING, SUSPENDED, ZOMBIE };
 
 // Per-process state
 struct proc {
@@ -105,3 +105,13 @@ struct proc {
   char name[16];               // Process name (debugging)
   int             tracing;     // If non-zero, trace mode on
 };
+
+struct header {
+    char name[16];
+    int mem_sz;
+    int stack_sz;
+    int code_sz;
+    int tracing;
+};
+
+

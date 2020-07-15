@@ -131,6 +131,12 @@ UPROGS=\
 	$U/_zombie\
 	$U/_strace\
 	$U/_ps\
+	$U/_sctest\
+	$U/_suspend\
+	$U/_resume\
+	$U/_count\
+	$U/_fibi\
+	$U/_vctest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

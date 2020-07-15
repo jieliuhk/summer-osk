@@ -46,7 +46,7 @@ consputc(int c)
   }
 }
 
-struct {
+struct input {
   struct spinlock lock;
   
   // input
@@ -55,24 +55,32 @@ struct {
   uint r;  // Read index
   uint w;  // Write index
   uint e;  // Edit index
-} cons;
+};
+
+static int active = 0;
+
+struct input vcons[10];
+struct input *consa;
+
 
 //
 // user write()s to the console go here.
 //
 int
-consolewrite(int user_src, uint64 src, int n)
+consolewrite(struct input *cons, int user_src, uint64 src, int n)
 {
   int i;
 
-  acquire(&cons.lock);
+  acquire(&cons->lock);
   for(i = 0; i < n; i++){
     char c;
     if(either_copyin(&c, user_src, src+i, 1) == -1)
       break;
-    consputc(c);
+    if (cons == consa) {
+      consputc(c);
+    }
   }
-  release(&cons.lock);
+  release(&cons->lock);
 
   return n;
 }
@@ -84,32 +92,32 @@ consolewrite(int user_src, uint64 src, int n)
 // or kernel address.
 //
 int
-consoleread(int user_dst, uint64 dst, int n)
+consoleread(struct input *cons, int user_dst, uint64 dst, int n)
 {
   uint target;
   int c;
   char cbuf;
 
   target = n;
-  acquire(&cons.lock);
+  acquire(&cons->lock);
   while(n > 0){
     // wait until interrupt handler has put some
     // input into cons.buffer.
-    while(cons.r == cons.w){
+    while(cons->r == cons->w){
       if(myproc()->killed){
-        release(&cons.lock);
+        release(&cons->lock);
         return -1;
       }
-      sleep(&cons.r, &cons.lock);
+      sleep(&cons->r, &cons->lock);
     }
 
-    c = cons.buf[cons.r++ % INPUT_BUF];
+    c = cons->buf[cons->r++ % INPUT_BUF];
 
     if(c == C('D')){  // end-of-file
       if(n < target){
         // Save ^D for next time, to make sure
         // caller gets a 0-byte result.
-        cons.r--;
+        cons->r--;
       }
       break;
     }
@@ -128,7 +136,7 @@ consoleread(int user_dst, uint64 dst, int n)
       break;
     }
   }
-  release(&cons.lock);
+  release(&cons->lock);
 
   return target - n;
 }
@@ -142,58 +150,103 @@ consoleread(int user_dst, uint64 dst, int n)
 void
 consoleintr(int c)
 {
-  acquire(&cons.lock);
+  int move_vconsole = 0;
+
+  acquire(&consa->lock);
 
   switch(c){
   case C('P'):  // Print process list.
     procdump();
     break;
   case C('U'):  // Kill line.
-    while(cons.e != cons.w &&
-          cons.buf[(cons.e-1) % INPUT_BUF] != '\n'){
-      cons.e--;
+    while(consa->e != consa->w &&
+          consa->buf[(consa->e-1) % INPUT_BUF] != '\n'){
+      consa->e--;
       consputc(BACKSPACE);
     }
     break;
   case C('H'): // Backspace
   case '\x7f':
-    if(cons.e != cons.w){
-      cons.e--;
+    if(consa->e != consa->w){
+      consa->e--;
       consputc(BACKSPACE);
     }
     break;
+
+  case C('N'):
+      move_vconsole = 1;
+      break;
+
+  case C('B'):
+      move_vconsole = -1;
+      break;
+
   default:
-    if(c != 0 && cons.e-cons.r < INPUT_BUF){
+    if(c != 0 && consa->e-consa->r < INPUT_BUF){
       c = (c == '\r') ? '\n' : c;
 
       // echo back to the user.
       consputc(c);
 
       // store for consumption by consoleread().
-      cons.buf[cons.e++ % INPUT_BUF] = c;
+      consa->buf[consa->e++ % INPUT_BUF] = c;
 
-      if(c == '\n' || c == C('D') || cons.e == cons.r+INPUT_BUF){
+      if(c == '\n' || c == C('D') || consa->e == consa->r+INPUT_BUF){
         // wake up consoleread() if a whole line (or end-of-file)
         // has arrived.
-        cons.w = cons.e;
-        wakeup(&cons.r);
+        consa->w = consa->e;
+        wakeup(&consa->r);
       }
     }
     break;
   }
   
-  release(&cons.lock);
+  release(&consa->lock);
+  
+  if(move_vconsole != 0 && move_vconsole + active >= 0 && move_vconsole + active < 10){
+      active += move_vconsole;
+      consa = &vcons[active];
+      printf("\nActive console now: %d\n", active);
+  }
+
+}
+
+int
+cread(int vc_num, int user_dst, uint64 dst, int n)
+{
+  return consoleread(&vcons[vc_num], user_dst, dst, n);
+}
+
+int
+cwrite(int vc_num, int user_src, uint64 src, int n)
+{
+  return consolewrite(&vcons[vc_num], user_src, src, n);
 }
 
 void
 consoleinit(void)
 {
-  initlock(&cons.lock, "cons");
+  int i;
+  char *vcname = "cons0";
+
+  for(i = 0; i < 10; i++) {
+      vcname[2] = '0' + i;
+      initlock(&vcons[i].lock, vcname);
+      vcons[i].r = 0;
+      vcons[i].w = 0;
+      vcons[i].e = 0;
+  }
+
+  consa = &vcons[0];
+  active = 0;
 
   uartinit();
 
   // connect read and write system calls
   // to consoleread and consolewrite.
-  devsw[CONSOLE].read = consoleread;
-  devsw[CONSOLE].write = consolewrite;
+  
+  for(i = 0; i < 10; i++) {
+      devsw[i].read = cread;
+      devsw[i].write = cwrite;
+  }
 }

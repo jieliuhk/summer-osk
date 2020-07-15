@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "pinfo.h"
 #include "defs.h"
+#include "stat.h"
 
 struct cpu cpus[NCPU];
 
@@ -20,6 +21,34 @@ extern void forkret(void);
 static void wakeup1(struct proc *chan);
 
 extern char trampoline[]; // trampoline.S
+
+// Load a program segment into pagetable at virtual address va.
+// va must be page-aligned
+// and the pages from va to va+sz must already be mapped.
+// Returns 0 on success, -1 on failure.
+static int
+loadseg(pagetable_t pagetable, uint64 va, struct inode *ip, uint offset, uint sz)
+{
+  uint i, n;
+  uint64 pa;
+
+  if((va % PGSIZE) != 0)
+    panic("loadseg: va must be page aligned");
+
+  for(i = 0; i < sz; i += PGSIZE){
+    pa = walkaddr(pagetable, va + i);
+    if(pa == 0)
+      panic("loadseg: address should exist");
+    if(sz - i < PGSIZE)
+      n = sz - i;
+    else
+      n = PGSIZE;
+    if(readi(ip, 0, (uint64)pa, offset+i, n) != n)
+      return -1;
+  }
+  
+  return 0;
+}
 
 void
 procinit(void)
@@ -605,7 +634,7 @@ kill(int pid)
     acquire(&p->lock);
     if(p->pid == pid){
       p->killed = 1;
-      if(p->state == SLEEPING){
+      if(p->state == SLEEPING || p->state == SUSPENDED){
         // Wake process from sleep().
         p->state = RUNNABLE;
       }
@@ -658,7 +687,8 @@ procdump(void)
   [SLEEPING]  "sleep ",
   [RUNNABLE]  "runble",
   [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
+  [ZOMBIE]    "zombie",
+  [SUSPENDED] "suspended"
   };
   struct proc *p;
   char *state;
@@ -683,23 +713,174 @@ void traceon (void)
 }
 
 //ps kernal code
-void kps (struct pinfo *pi)
+void kps (uint64 piaddr)
 {
     struct proc *p;
+    struct pinfo kpi;
     int i = 0;
 
     for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
         
 	if(p->state != UNUSED) {
-            pi->proc[i].pid = p->pid;
-            pi->proc[i].sz = p->sz;
-            safestrcpy(pi->proc[i].name, p->name, 16);
+            kpi.proc[i].pid = p->pid;
+            kpi.proc[i].sz = p->sz;
+            safestrcpy(kpi.proc[i].name, p->name, 16);
             i++;
         }
 
         release(&p->lock);
     }
 
-    pi->count = i;
+    kpi.count = i;
+
+    copyout(myproc()->pagetable, piaddr, (void *)&kpi, sizeof(struct pinfo));
 }
+
+int ksuspend (int pid, struct file *f) {
+    struct header hdr;
+    struct proc *dstp;
+    int found = 0;
+    
+    for(dstp = proc; dstp < &proc[NPROC]; dstp++){
+        acquire(&dstp->lock);
+        if(dstp->pid == pid){
+            dstp->state = SUSPENDED;
+            found = 1;
+	    release(&dstp->lock);
+	    break;
+        }
+	release(&dstp->lock);
+    }
+    
+    if(!found) {
+      return -1;
+    }
+
+    hdr.mem_sz = dstp->sz;
+    hdr.code_sz = dstp->sz - 2 * PGSIZE;
+    hdr.stack_sz = PGSIZE;
+    hdr.tracing = dstp->tracing;
+    strncpy(hdr.name, dstp->name, 16);
+
+    pagetable_t tmp = myproc()->pagetable;
+    myproc()->pagetable = dstp->pagetable;
+
+    filewrite(f, (uint64)&hdr, 0, sizeof(struct header));
+    filewrite(f, (uint64) dstp->tf, 0, sizeof(struct trapframe));
+    filewrite(f, (uint64)0, 1, hdr.code_sz);
+    filewrite(f, (uint64) (hdr.code_sz + PGSIZE), 1, PGSIZE);
+    myproc()->pagetable = tmp;
+
+    kill(pid);
+
+    return 0;
+}
+
+int kresume (char *path) {
+    struct inode *ip;
+    struct header hdr;
+    pagetable_t pagetable = 0, oldpagetable;
+    struct proc *p = myproc();
+    struct trapframe tf;
+    int oldsz;
+    int off = 0;
+    int sz = 0;
+
+    begin_op();
+
+    if((ip = namei(path)) == 0){
+        end_op();
+        return -1;
+    }
+
+    //create new page table
+    if((pagetable = proc_pagetable(p)) == 0) {
+        end_op();
+	return -1;
+    }
+
+    ilock(ip);
+
+    //read header
+    if(readi(ip, 0, (uint64)&hdr, 0, sizeof(hdr)) != sizeof(hdr)) {
+        iunlockput(ip);
+	end_op();
+        return -1;
+    }
+    off += sizeof(hdr);
+
+    //read trapframe
+    if(readi(ip, 0, (uint64)&tf, off, sizeof(tf)) != sizeof(tf)) {
+        iunlockput(ip);
+	end_op();
+        return -1;
+    }
+    off += sizeof(tf);
+
+    //allocate vm
+    uvmalloc(pagetable, 0, hdr.mem_sz);
+
+    //load code and data
+    loadseg(pagetable, 0, ip, off, hdr.code_sz);
+    off += hdr.code_sz;
+
+    //load stack
+    sz = PGROUNDUP(hdr.code_sz);
+    loadseg(pagetable, sz + PGSIZE, ip, off, PGSIZE);
+    uvmclear(pagetable, sz);
+
+    end_op();
+    iunlockput(ip);
+  
+    p = myproc();
+
+    //commit to the user image 
+    
+    p->tf->kernel_satp   = tf.kernel_satp;
+    p->tf->kernel_sp     = tf.kernel_sp;
+    p->tf->kernel_trap   = tf.kernel_trap;
+    p->tf->epc   = tf.epc;
+    p->tf->kernel_hartid = tf.kernel_hartid;
+    p->tf->ra  = tf.ra;
+    p->tf->sp  = tf.sp;
+    p->tf->gp  = tf.gp;
+    p->tf->tp  = tf.tp;
+    p->tf->t0  = tf.t0;
+    p->tf->t1  = tf.t1;
+    p->tf->t2   = tf.t2;
+    p->tf->s0   = tf.s0;
+    p->tf->s1   = tf.s1;
+    p->tf->a0   = tf.a0;
+    p->tf->a1   = tf.a1;
+    p->tf->a2   = tf.a2;
+    p->tf->a3   = tf.a3;
+    p->tf->a4   = tf.a4;
+    p->tf->a5   = tf.a5;
+    p->tf->a6   = tf.a6;
+    p->tf->a7   = tf.a7;
+    p->tf->s2   = tf.s2;
+    p->tf->s3   = tf.s3;
+    p->tf->s4   = tf.s4;
+    p->tf->s5   = tf.s5;
+    p->tf->s6   = tf.s6;
+    p->tf->s7   = tf.s7;
+    p->tf->s8   = tf.s8;
+    p->tf->s9   = tf.s9;
+    p->tf->s10  = tf.s10;
+    p->tf->s11  = tf.s11;
+    p->tf->t3   = tf.t3;
+    p->tf->t4   = tf.t4;
+    p->tf->t5   = tf.t5;
+    p->tf->t6   = tf.t6;
+        
+    oldpagetable = p->pagetable;
+    oldsz = p->sz;
+    p->pagetable = pagetable;
+    p->sz = hdr.mem_sz;
+    strncpy(p->name, hdr.name, 16);
+    proc_freepagetable(oldpagetable, oldsz);
+
+    return 0;
+}
+

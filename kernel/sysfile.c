@@ -52,7 +52,7 @@ fdalloc(struct file *f)
   return -1;
 }
 
-static void
+void
 cputc_encoded(char c)
 {
     char buf[2];
@@ -60,19 +60,19 @@ cputc_encoded(char c)
     if (c == '\n') {
         printf("\\n");
     } else {
-        buf[0] = c;
-        buf[1] = '\0';
+	buf[0] = c;
+	buf[1] = '\0';
         printf("%s", buf);
     }
 }
 
-static void
+void
 cprintfn(char *s, int n)
 {
     int i;
-
+    
     for (i = 0; i < n; i++) {
-        cputc_encoded(s[i]);
+       cputc_encoded(s[i]);
     }
 }
 
@@ -81,11 +81,18 @@ sys_dup(void)
 {
   struct file *f;
   int fd;
-
-  if(argfd(0, 0, &f) < 0)
+  int fdin;
+  struct proc *proc = myproc();
+  
+  if(argfd(0, &fdin, &f) < 0)
     return -1;
   if((fd=fdalloc(f)) < 0)
     return -1;
+  
+  if(proc->tracing) {
+      printf("\n[%d]sys_dup(%d, ", proc->pid, fdin);
+  }
+
   filedup(f);
   return fd;
 }
@@ -96,9 +103,16 @@ sys_read(void)
   struct file *f;
   int n;
   uint64 p;
+  struct proc *proc = myproc();
+  int fd;
 
-  if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argaddr(1, &p) < 0)
+  if(argfd(0, &fd, &f) < 0 || argint(2, &n) < 0 || argaddr(1, &p) < 0)
     return -1;
+  
+  if(proc->tracing) {
+    printf("\n[%d]sys_read(%d, %d, %d) ", proc->pid, fd, p, n);
+  }
+
   return fileread(f, p, n);
 }
 
@@ -122,7 +136,7 @@ sys_write(void)
       printf(", %d)", n);
   }
 
-  return filewrite(f, p, n);
+  return filewrite(f, p, 1, n);
 }
 
 uint64
@@ -133,6 +147,11 @@ sys_close(void)
 
   if(argfd(0, &fd, &f) < 0)
     return -1;
+
+  if(myproc()->tracing) {
+    printf("\n[%d]sys_close(%d) ", myproc()->pid, fd);
+  }
+
   myproc()->ofile[fd] = 0;
   fileclose(f);
   return 0;
@@ -143,9 +162,15 @@ sys_fstat(void)
 {
   struct file *f;
   uint64 st; // user pointer to struct stat
+  int fd;
 
-  if(argfd(0, 0, &f) < 0 || argaddr(1, &st) < 0)
+  if(argfd(0, &fd, &f) < 0 || argaddr(1, &st) < 0)
     return -1;
+
+  if(myproc()->tracing) {
+    printf("\n[%d]sys_fstat(%d, %d) ", myproc()->pid, fd, st);
+  }
+
   return filestat(f, st);
 }
 
@@ -158,6 +183,10 @@ sys_link(void)
 
   if(argstr(0, old, MAXPATH) < 0 || argstr(1, new, MAXPATH) < 0)
     return -1;
+
+  if(myproc()->tracing) {
+    printf("\n[%d]sys_link(%s, %s) ", myproc()->pid, old, new);
+  }
 
   begin_op();
   if((ip = namei(old)) == 0){
@@ -225,6 +254,11 @@ sys_unlink(void)
 
   if(argstr(0, path, MAXPATH) < 0)
     return -1;
+
+  if(myproc()->tracing) {
+    printf("\n[%d]sys_unlink(%s)", myproc()->pid, path);
+  }
+
 
   begin_op();
   if((dp = nameiparent(path, name)) == 0){
@@ -329,6 +363,10 @@ sys_open(void)
   if((n = argstr(0, path, MAXPATH)) < 0 || argint(1, &omode) < 0)
     return -1;
 
+  if(myproc()->tracing) {
+    printf("\n[%d]sys_open(%s, %d)", myproc()->pid, path, omode);
+  }
+
   begin_op();
 
   if(omode & O_CREATE){
@@ -392,6 +430,11 @@ sys_mkdir(void)
     end_op();
     return -1;
   }
+
+  if(myproc()->tracing) {
+    printf("\n[%d]sys_mkdir(%s)", myproc()->pid, path);
+  }
+
   iunlockput(ip);
   end_op();
   return 0;
@@ -412,6 +455,11 @@ sys_mknod(void)
     end_op();
     return -1;
   }
+
+  if(myproc()->tracing) {
+    printf("\n[%d]sys_mknod(%s, %d, %d)", myproc()->pid, path, major, minor);
+  }
+
   iunlockput(ip);
   end_op();
   return 0;
@@ -429,6 +477,11 @@ sys_chdir(void)
     end_op();
     return -1;
   }
+
+  if(p->tracing) {
+    printf("\n[%d]sys_chdir(%s)", p->pid, path);
+  }
+
   ilock(ip);
   if(ip->type != T_DIR){
     iunlockput(ip);
@@ -447,11 +500,13 @@ sys_exec(void)
 {
   char path[MAXPATH], *argv[MAXARG];
   int i;
+  int j;
   uint64 uargv, uarg;
 
   if(argstr(0, path, MAXPATH) < 0 || argaddr(1, &uargv) < 0){
     return -1;
   }
+
   memset(argv, 0, sizeof(argv));
   for(i=0;; i++){
     if(i >= NELEM(argv)){
@@ -470,6 +525,18 @@ sys_exec(void)
     if(fetchstr(uarg, argv[i], PGSIZE) < 0){
       goto bad;
     }
+  }
+
+  if(myproc()->tracing) {
+    printf("\n[%d]sys_exec(%s", myproc()->pid, path);
+    
+    j = 0;
+    while(argv[j] != 0) {
+      printf(", %s", argv[j]);
+      j++;
+    }
+
+    printf(")");
   }
 
   int ret = exec(path, argv);
@@ -497,6 +564,7 @@ sys_pipe(void)
     return -1;
   if(pipealloc(&rf, &wf) < 0)
     return -1;
+
   fd0 = -1;
   if((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0){
     if(fd0 >= 0)
@@ -505,6 +573,11 @@ sys_pipe(void)
     fileclose(wf);
     return -1;
   }
+
+  if(myproc()->tracing) {
+   printf("\n[%d]sys_pipe(%d,%d)", myproc()->pid, fd0, fd1);
+  }
+
   if(copyout(p->pagetable, fdarray, (char*)&fd0, sizeof(fd0)) < 0 ||
      copyout(p->pagetable, fdarray+sizeof(fd0), (char *)&fd1, sizeof(fd1)) < 0){
     p->ofile[fd0] = 0;
@@ -514,4 +587,21 @@ sys_pipe(void)
     return -1;
   }
   return 0;
+}
+
+int sys_suspend(void)
+{
+    int pid;
+    char path[16];
+    struct file *fp;
+
+    if(argint(0, &pid) < 0 || argfd(1, 0, &fp) < 0) {
+        return -1;
+    }
+
+    if(myproc()->tracing) {
+        printf("\n[%d]sys_suspendproc(%d, %s)", myproc()->pid, pid, path);
+    }
+
+    return ksuspend(pid, fp);
 }
