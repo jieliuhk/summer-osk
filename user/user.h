@@ -28,6 +28,9 @@ int traceon(void);
 int ps(struct pinfo*);
 int suspend(int, int);
 int resume(char *);
+int ccreate(char *);
+int cstart(char *);
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

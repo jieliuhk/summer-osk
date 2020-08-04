@@ -605,3 +605,35 @@ int sys_suspend(void)
 
     return ksuspend(pid, fp);
 }
+
+int sys_ccreate(void)
+{
+    char name[16];
+
+    if(argstr(0, name, 16) < 0) {
+        return -1;
+    }
+    
+    if(myproc()->tracing) {
+        printf("\n[%d]sys_ccreate(%s)", myproc()->pid, name);
+    }
+
+    return 0;
+}
+
+int sys_cstart(void)
+{
+    char name[16];
+
+    if(argstr(0, name, 16) < 0) {
+        return -1;
+    }
+    
+    if(myproc()->tracing) {
+        printf("\n[%d]sys_cstart(%s)", myproc()->pid, name);
+    }
+
+    return 0;
+}
+
+

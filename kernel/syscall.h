@@ -23,4 +23,7 @@
 #define SYS_traceon 22
 #define SYS_ps      23
 #define SYS_suspend 24
-#define SYS_resume 25
+#define SYS_resume  25
+#define SYS_ccreate 26
+#define SYS_cstart  27
+

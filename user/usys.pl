@@ -40,4 +40,6 @@ entry("traceon");
 entry("ps");
 entry("suspend");
 entry("resume");
+entry("ccreate");
+entry("cstart");
 
