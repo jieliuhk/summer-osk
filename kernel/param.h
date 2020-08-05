@@ -11,3 +11,6 @@
 #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache
 #define FSSIZE       1000  // size of file system in blocks
 #define MAXPATH      128   // maximum file path name
+#define NCONT        10   //maximum container
+#define MAX_CONT_MEM   NPROC*4096*1024 // max memory a container can use (256 mb)
+#define MAX_CONT_DSK   NPROC*1024*4096 // max amount of disk space a container can use (256mb)

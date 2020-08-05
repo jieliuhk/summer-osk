@@ -109,6 +109,9 @@ void		kps(uint64);
 int             ksuspend(int, struct file *);
 int 		kresume(char *);
 
+// container.c
+//int		ccreate(char *, int, uint64, uint64);
+
 // swtch.S
 void            swtch(struct context*, struct context*);
 

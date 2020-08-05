@@ -1,3 +1,5 @@
+enum contstate { CUNUSED, CEMBRYO, CREADY, CRUNNABLE, CRUNNING, CPAUSED, CSTOPPING };
+
 struct cont {
 	uint msz;	// Max size of memory (bytes)
 	uint mdsk;	// Max amount of disk space (bytes)
