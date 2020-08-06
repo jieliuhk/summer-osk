@@ -6,6 +6,7 @@
 #include "container.h"
 #include "defs.h"
 #include "stat.h"
+#include "proc.h"
 
 struct {
 	struct spinlock lock;
@@ -62,8 +63,9 @@ name2cont(char* name)
 
     for (i = 0; i < NCONT; i++) {
         c = &ctable.cont[i];
-        if (strncmp(name, c->name, strlen(name)) == 0 && c->state != CUNUSED)
+        if (strncmp(name, c->name, strlen(name)) == 0 && c->state != CUNUSED) {
             return c;
+        }
     }
     return 0;
 }
@@ -88,7 +90,7 @@ ccreate(char* name, int mproc, uint64 msz, uint64 mdsk)
     if ((nc = alloccont()) == 0)
         return -1;
 
-    // Check if we are root
+    //set container root
     if ((rootdir = namei(name)) == 0) {
         nc->state = CUNUSED;
         return -1;
@@ -109,6 +111,16 @@ ccreate(char* name, int mproc, uint64 msz, uint64 mdsk)
 // Sets a container to be scheduled
 int
 cstart(char* name) 
-{		
+{
+    struct proc *p;
+    struct cont *c;
+    p = myproc();
+
+    if((c = name2cont(name)) == 0) {
+        printf("container %s not found", name); 
+    }
+
+    p->cont = c;
+
     return 0;
 }

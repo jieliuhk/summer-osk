@@ -618,13 +618,13 @@ int sys_ccreate(void)
         printf("\n[%d]sys_ccreate(%s)", myproc()->pid, name);
     }
 
-    return 0;//ccreate(name, 10, 100, 200);
+    return ccreate(name, 10, 100, 200);
 }
 
 int sys_cstart(void)
 {
     char name[16];
-
+    
     if(argstr(0, name, 16) < 0) {
         return -1;
     }
@@ -633,7 +633,7 @@ int sys_cstart(void)
         printf("\n[%d]sys_cstart(%s)", myproc()->pid, name);
     }
 
-    return 0;
+    return cstart(name);
 }
 
 

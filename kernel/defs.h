@@ -9,6 +9,7 @@ struct sleeplock;
 struct stat;
 struct superblock;
 struct pinfo;
+struct cont;
 
 // bio.c
 void            binit(void);
@@ -110,8 +111,9 @@ int             ksuspend(int, struct file *);
 int 		kresume(char *);
 
 // container.c
-//int		ccreate(char *, int, uint64, uint64);
-
+int		ccreate(char *, int, uint64, uint64);
+int		cstart(char *);
+struct cont*	name2cont(char *);
 // swtch.S
 void            swtch(struct context*, struct context*);
 

@@ -104,6 +104,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int             tracing;     // If non-zero, trace mode on
+  struct cont *cont;		       // Process's container, root if = 0
 };
 
 struct header {

@@ -51,14 +51,42 @@ void create(char * name)
     }
 
     if (cp(name, "ls") != 1) 
-        printf("Failed to copy file");
+        printf("Failed to copy ls");
+
+   if (cp(name, "rm") != 1) 
+        printf("Failed to copy rm");
 
     ccreate(name);
 }
 
+void start(char * name, char * vc, char * prog)
+{
+    int fd, id;
+
+    fd = open(vc, O_RDWR);
+
+    /* start new container by fork current process */
+    id = fork();
+
+    if (id == 0){
+        cstart(name);
+        close(0);
+        close(1);
+        close(2);
+        dup(fd);
+        dup(fd);
+        dup(fd);
+        exec(prog, &prog);
+        exit(0);
+    }
+
+    printf("container %s started on %s\n", name, vc);
+    exit(0);
+}
+
 int main(int argc, char *argv[])
 {
-    if(argc != 3) {
+    if(argc < 3) {
         printf("invalid arguments\n");
         exit(0);
     }
@@ -66,7 +94,7 @@ int main(int argc, char *argv[])
     if(strncmp(argv[1],  "ccreate", 16) == 0) {
         create(argv[2]);
     } else if(strncmp(argv[1],  "cstart", 16) == 0) {
-        cstart(argv[2]);
+        start(argv[2], argv[3], "sh");
     } else {
         printf("command not found");
     }

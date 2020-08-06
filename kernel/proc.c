@@ -7,6 +7,7 @@
 #include "pinfo.h"
 #include "defs.h"
 #include "stat.h"
+#include "container.h"
 
 struct cpu cpus[NCPU];
 
@@ -153,6 +154,9 @@ found:
   //Turn off trace mode by default
   p->tracing = 0;
 
+  //Set proc to root as default
+  p->cont = 0;
+
   return p;
 }
 
@@ -175,6 +179,7 @@ freeproc(struct proc *p)
   p->chan = 0;
   p->killed = 0;
   p->xstate = 0;
+  p->cont = 0;
   p->state = UNUSED;
 }
 
@@ -298,14 +303,19 @@ fork(void)
   // copy saved user registers.
   *(np->tf) = *(p->tf);
 
-  // Cause fork to return 0 in the child.
+  //Cause fork to return 0 in the child.
   np->tf->a0 = 0;
 
-  // increment reference counts on open file descriptors.
+  //increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])
       np->ofile[i] = filedup(p->ofile[i]);
-  np->cwd = idup(p->cwd);
+  
+  if(p->cont != 0) { //process fork inside container
+      np->cwd = idup(p->cont->rootdir);
+  } else {
+      np->cwd = idup(p->cwd);
+  }
 
   safestrcpy(np->name, p->name, sizeof(p->name));
 
