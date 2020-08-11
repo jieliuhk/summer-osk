@@ -74,8 +74,11 @@ void create(char * name)
     //if (cp(name, "resume") != 1) 
         //printf("Failed to copy resume");
 
-    if (cp(name, "kill") != 1) 
-        printf("Failed to copy kill");
+    //if (cp(name, "kill") != 1) 
+        //printf("Failed to copy kill");
+
+    if (cp(name, "freesize") != 1) 
+        printf("Failed to copy freesize");
 
     ccreate(name);
 }
@@ -112,13 +115,17 @@ void start(char * name, char * vc, char * prog)
 
 int main(int argc, char *argv[])
 {
+    //int maxmem, maxdisk;
+
     if(argc < 3) {
         printf("invalid arguments\n");
         exit(0);
     }
 
     if(strncmp(argv[1],  "ccreate", 16) == 0) {
-        create(argv[2]);
+       //maxmem = atoi(argv[3]);
+       //maxdisk = atoi(argv[4]); 
+       create(argv[2]);
     } else if(strncmp(argv[1],  "cstart", 16) == 0) {
         start(argv[2], argv[3], "sh");
     } else {

@@ -7,6 +7,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "pinfo.h"
+#include "container.h"
 
 uint64
 sys_exit(void)
@@ -156,6 +157,27 @@ sys_ps(void)
     kps(piaddr);
     return 0;
 }
+
+uint64
+sys_freesize(void)
+{
+    struct proc *p;
+    struct cont *c;
+
+    p = myproc();
+
+    if(p->tracing) {
+        printf("[%d]freesize", myproc()->pid);
+    }
+
+    if(p != 0 && p->cont != 0) {
+        c = p->cont;
+        return (c->msz - c->upg * PGSIZE);
+    } else {
+      return kfreesize();
+    }
+}
+
 
 uint64
 sys_resume(void)

@@ -139,6 +139,7 @@ UPROGS=\
 	$U/_fibi\
 	$U/_vctest\
 	$U/_ctool\
+	$U/_freesize\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

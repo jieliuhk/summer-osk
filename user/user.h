@@ -30,6 +30,7 @@ int suspend(int, int);
 int resume(char *);
 int ccreate(char *);
 int cstart(char *);
+int freesize(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

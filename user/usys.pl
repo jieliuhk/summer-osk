@@ -42,4 +42,5 @@ entry("suspend");
 entry("resume");
 entry("ccreate");
 entry("cstart");
+entry("freesize");
 
