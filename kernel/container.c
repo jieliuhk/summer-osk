@@ -120,6 +120,7 @@ cstart(char* name)
         printf("container %s not found", name); 
     }
 
+    p->cwd = idup(c->rootdir);
     p->cont = c;
 
     return 0;

@@ -20,6 +20,7 @@
 #include "fs.h"
 #include "buf.h"
 #include "file.h"
+#include "container.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 static void itrunc(struct inode*);
@@ -629,12 +630,21 @@ skipelem(char *path, char *name)
 static struct inode*
 namex(char *path, int nameiparent, char *name)
 {
-  struct inode *ip, *next;
+  struct inode *ip, *next, *iroot;
+  struct proc *p;
 
-  if(*path == '/')
-    ip = iget(ROOTDEV, ROOTINO);
+  p = myproc();
+  iroot = iget(ROOTDEV, ROOTINO);
+
+  if(*path == '/') {
+    if(p == 0 || p->cont == 0) {
+      ip = iroot;
+    } else {
+      ip = idup(p->cont->rootdir);
+    }
+  }
   else
-    ip = idup(myproc()->cwd);
+    ip = idup(p->cwd);
 
   while((path = skipelem(path, name)) != 0){
     ilock(ip);
@@ -652,8 +662,13 @@ namex(char *path, int nameiparent, char *name)
       return 0;
     }
     iunlockput(ip);
-    ip = next;
+     // If myproc is running on root, 
+    // or the above (next) folder is not the root folder,
+    // then set ip = next
+    if (p == 0 || p->cont == 0 || next->inum != iroot->inum)
+      ip = next;
   }
+
   if(nameiparent){
     iput(ip);
     return 0;

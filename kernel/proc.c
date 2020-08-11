@@ -311,11 +311,7 @@ fork(void)
     if(p->ofile[i])
       np->ofile[i] = filedup(p->ofile[i]);
   
-  if(p->cont != 0) { //process fork inside container
-      np->cwd = idup(p->cont->rootdir);
-  } else {
-      np->cwd = idup(p->cwd);
-  }
+  np->cwd = idup(p->cwd);
 
   safestrcpy(np->name, p->name, sizeof(p->name));
 

@@ -53,8 +53,19 @@ void create(char * name)
     if (cp(name, "ls") != 1) 
         printf("Failed to copy ls");
 
-   if (cp(name, "rm") != 1) 
+    if (cp(name, "rm") != 1) 
         printf("Failed to copy rm");
+
+    if (cp(name, "mkdir") != 1) 
+        printf("Failed to copy mkdir");
+
+    if (cp(name, "ps") != 1) 
+        printf("Failed to copy ps");
+
+    if (cp(name, "sh") != 1) 
+        printf("Failed to copy sh");
+
+
 
     ccreate(name);
 }
@@ -62,20 +73,25 @@ void create(char * name)
 void start(char * name, char * vc, char * prog)
 {
     int fd, id;
+    //char path[32];
 
     fd = open(vc, O_RDWR);
+
+    //memmove(path, "/", 1);
+    //memmove(path + 1, name, strlen(name));
+    //memmove(path + 1 + strlen(name), prog, strlen(prog));
 
     /* start new container by fork current process */
     id = fork();
 
     if (id == 0){
-        cstart(name);
         close(0);
         close(1);
         close(2);
         dup(fd);
         dup(fd);
         dup(fd);
+        cstart(name);
         exec(prog, &prog);
         exit(0);
     }
