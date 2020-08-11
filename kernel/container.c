@@ -35,10 +35,35 @@ alloccont(void)
 found:
 	c->state = CEMBRYO;
 	c->cid = nextcid++;
+	c->nextcpid = 2;
 
 	release(&ctable.lock);
 
 	return c;
+}
+
+int
+alloccpid(struct cont *cont) {
+  int cpid;
+  
+  acquire(&cont->lock);
+  cpid = cont->nextcpid;
+  cont->nextcpid = cont->nextcpid + 1;
+  release(&cont->lock);
+
+  return cpid;
+}
+
+struct cont*
+mycont() {
+    struct cont *c;
+
+    for(c = ctable.cont; c < &ctable.cont[NCONT]; c++)
+        if(c->state == CUNUSED) {
+	    return c;
+	}
+
+    return 0;
 }
 
 struct cont*

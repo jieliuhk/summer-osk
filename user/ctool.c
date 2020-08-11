@@ -53,11 +53,11 @@ void create(char * name)
     if (cp(name, "ls") != 1) 
         printf("Failed to copy ls");
 
-    if (cp(name, "rm") != 1) 
-        printf("Failed to copy rm");
+    //if (cp(name, "rm") != 1) 
+        //printf("Failed to copy rm");
 
-    if (cp(name, "mkdir") != 1) 
-        printf("Failed to copy mkdir");
+    //if (cp(name, "mkdir") != 1)
+        //printf("Failed to copy mkdir");
 
     if (cp(name, "ps") != 1) 
         printf("Failed to copy ps");
@@ -65,7 +65,17 @@ void create(char * name)
     if (cp(name, "sh") != 1) 
         printf("Failed to copy sh");
 
+    if (cp(name, "count") != 1) 
+        printf("Failed to copy count");
 
+    //if (cp(name, "suspend") != 1) 
+        //printf("Failed to copy suspennd");
+
+    //if (cp(name, "resume") != 1) 
+        //printf("Failed to copy resume");
+
+    if (cp(name, "kill") != 1) 
+        printf("Failed to copy kill");
 
     ccreate(name);
 }

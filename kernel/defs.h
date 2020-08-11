@@ -114,6 +114,9 @@ int 		kresume(char *);
 int		ccreate(char *, int, uint64, uint64);
 int		cstart(char *);
 struct cont*	name2cont(char *);
+struct cont*    mycont();
+int 		alloccpid(struct cont*);
+
 // swtch.S
 void            swtch(struct context*, struct context*);
 

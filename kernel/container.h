@@ -10,6 +10,7 @@ struct cont {
     uint udsk;			// Used disk space (blocks)
     int uproc;			// Used processes
     int cid;			// Container ID
+    int nextcpid;		// Next containerized pid
     struct inode *rootdir;	// Root directory
     enum contstate state;	// State of container
     char name[16];          	// Container name

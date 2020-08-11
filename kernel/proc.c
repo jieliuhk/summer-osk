@@ -135,6 +135,7 @@ allocproc(void)
 
 found:
   p->pid = allocpid();
+  p->cpid = 1;
 
   // Allocate a trapframe page.
   if((p->tf = (struct trapframe *)kalloc()) == 0){
@@ -312,6 +313,11 @@ fork(void)
       np->ofile[i] = filedup(p->ofile[i]);
   
   np->cwd = idup(p->cwd);
+  np->cont = p->cont;
+  
+  if(np->cont != 0) {
+    np->cpid = alloccpid(np->cont);
+  }
 
   safestrcpy(np->name, p->name, sizeof(p->name));
 
@@ -634,11 +640,22 @@ wakeup1(struct proc *p)
 int
 kill(int pid)
 {
+  int id;
   struct proc *p;
+  struct cont *curcont;
+
+  curcont = myproc()->cont;
 
   for(p = proc; p < &proc[NPROC]; p++){
     acquire(&p->lock);
-    if(p->pid == pid){
+    
+    if(curcont == 0) {
+      id = p->pid;
+    } else {
+      id = p->cpid;
+    }
+
+    if(id == pid && (curcont == 0 || p->cont == curcont)){
       p->killed = 1;
       if(p->state == SLEEPING || p->state == SUSPENDED){
         // Wake process from sleep().
@@ -688,6 +705,7 @@ either_copyin(void *dst, int user_src, uint64 src, uint64 len)
 void
 procdump(void)
 {
+  //TODO: add process namespace isolation
   static char *states[] = {
   [UNUSED]    "unused",
   [SLEEPING]  "sleep ",
@@ -698,7 +716,7 @@ procdump(void)
   };
   struct proc *p;
   char *state;
-
+  
   printf("\n");
   for(p = proc; p < &proc[NPROC]; p++){
     if(p->state == UNUSED)
@@ -721,20 +739,30 @@ void traceon (void)
 //ps kernal code
 void kps (uint64 piaddr)
 {
-    struct proc *p;
+    struct proc *p, *curp;
     struct pinfo kpi;
+    struct cont *curcont;
     int i = 0;
+
+    curp = myproc();
+    curcont = curp->cont;
 
     for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
         
 	if(p->state != UNUSED) {
-            kpi.proc[i].pid = p->pid;
-            kpi.proc[i].sz = p->sz;
-            safestrcpy(kpi.proc[i].name, p->name, 16);
-            i++;
-        }
+            if(curcont == 0 || p->cont == curcont) {
+	        if(curcont == 0) {
+		  kpi.proc[i].pid = p->pid;
+		} else {
+		  kpi.proc[i].pid = p->cpid;
+		}
 
+                kpi.proc[i].sz = p->sz;
+                safestrcpy(kpi.proc[i].name, p->name, 16);
+                i++;
+	    }
+        }
         release(&p->lock);
     }
 
@@ -745,16 +773,28 @@ void kps (uint64 piaddr)
 
 int ksuspend (int pid, struct file *f) {
     struct header hdr;
-    struct proc *dstp;
+    struct proc *dstp, *curp;
+    struct cont *curcont;
     int found = 0;
+    int id;
+
+    curp = myproc();
+    curcont = curp->cont;
     
     for(dstp = proc; dstp < &proc[NPROC]; dstp++){
         acquire(&dstp->lock);
-        if(dstp->pid == pid){
-            dstp->state = SUSPENDED;
-            found = 1;
-	    release(&dstp->lock);
-	    break;
+        if(curcont == 0 || dstp->cont == curcont) {
+	    if(curcont == 0) {
+	      id = dstp->pid;
+	    } else {
+	      id = dstp->cpid;
+	    }
+            if(id == pid){
+                dstp->state = SUSPENDED;
+                found = 1;
+	        release(&dstp->lock);
+	        break;
+            }
         }
 	release(&dstp->lock);
     }
