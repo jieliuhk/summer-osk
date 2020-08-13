@@ -78,9 +78,11 @@ kfree(void *pa)
   
   if(p != 0 && p->cont != 0) {
      c = p->cont;
+     acquire(&c->lock);
      if((c->upg - 1) >= 0) {
        c->upg -= 1;
      }
+     release(&c->lock);
   }
 }
 
@@ -99,11 +101,14 @@ kalloc(void)
 
   if(p !=0 && p->cont != 0) {
      c = p->cont;
+     acquire(&c->lock);
      maxpg = (c->msz) / PGSIZE;
      if((c->upg + 1) > maxpg) {
-       return 0;
+        printf("\nNot enough memory for container %s", c->name);
+        return 0;
      }
      c->upg += 1;
+     release(&c->lock);
   }
 
   acquire(&kmem.lock);

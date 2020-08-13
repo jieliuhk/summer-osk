@@ -121,8 +121,19 @@ allocpid() {
 static struct proc*
 allocproc(void)
 {
-  struct proc *p;
+  struct proc *p, *curp;
+  struct cont *c;
 
+  curp = myproc();
+  c = 0;
+
+  if(curp != 0 && (c = curp->cont) != 0) {
+    if(c->udproc >= c->mproc) {
+      printf("cannot allocate new process"); 
+      return 0;
+    }
+  }
+  
   for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if(p->state == UNUSED) {
@@ -158,6 +169,10 @@ found:
   //Set proc to root as default
   p->cont = 0;
 
+  if(c != 0) {
+    c->udproc += 1;
+  }
+
   return p;
 }
 
@@ -167,6 +182,11 @@ found:
 static void
 freeproc(struct proc *p)
 {
+  if(p->cont != 0) {
+    if(p->cont->udproc -1 >= 0)
+      p->cont->udproc -= 1;
+  }
+
   if(p->tf)
     kfree((void*)p->tf);
   p->tf = 0;

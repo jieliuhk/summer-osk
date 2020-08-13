@@ -618,7 +618,7 @@ int sys_ccreate(void)
         printf("\n[%d]sys_ccreate(%s)", myproc()->pid, name);
     }
 
-    return ccreate(name, 10, 100 * PGSIZE, 200);
+    return ccreate(name, 8, 200 * PGSIZE, 500 * BSIZE);
 }
 
 int sys_cstart(void)

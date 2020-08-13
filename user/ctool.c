@@ -62,7 +62,7 @@ void create(char * name)
     if (cp(name, "ps") != 1) 
         printf("Failed to copy ps");
 
-    if (cp(name, "sh") != 1) 
+    if (cp(name, "sh") != 1)
         printf("Failed to copy sh");
 
     if (cp(name, "count") != 1) 
