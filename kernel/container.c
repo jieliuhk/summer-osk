@@ -97,7 +97,7 @@ name2cont(char* name)
 
 // Creates a container with the maximum procs, mem, and disk size
 int 
-ccreate(char* name, int mproc, uint64 msz, uint64 mdsk)
+ccreate(char* name, int mproc, int msz, int mdsk)
 {
     struct cont *nc;
     struct inode* rootdir;

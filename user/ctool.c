@@ -79,16 +79,15 @@ void create(char * name)
 
     if (cp(name, "freesize") != 1) 
         printf("Failed to copy freesize");
-
-    ccreate(name);
 }
 
-void start(char * name, char * vc, char * prog)
+void start(char * name, char * vc, int maxproc, int maxmem, int maxdisk, char * prog)
 {
     int fd, id;
     //char path[32];
 
     fd = open(vc, O_RDWR);
+    ccreate(name);
 
     //memmove(path, "/", 1);
     //memmove(path + 1, name, strlen(name));
@@ -115,7 +114,7 @@ void start(char * name, char * vc, char * prog)
 
 int main(int argc, char *argv[])
 {
-    //int maxmem, maxdisk;
+    int maxproc,maxmem, maxdisk;
 
     if(argc < 3) {
         printf("invalid arguments\n");
@@ -123,11 +122,18 @@ int main(int argc, char *argv[])
     }
 
     if(strncmp(argv[1],  "ccreate", 16) == 0) {
-       //maxmem = atoi(argv[3]);
-       //maxdisk = atoi(argv[4]); 
        create(argv[2]);
     } else if(strncmp(argv[1],  "cstart", 16) == 0) {
-        start(argv[2], argv[3], "sh");
+       if(argc == 4) {
+           start(argv[2], argv[3], 8, 819200, 2048000, "sh");
+       } else if (argc == 7) {
+           maxproc = atoi(argv[4]);
+           maxmem  = atoi(argv[5]); 
+           maxdisk = atoi(argv[6]);
+           start(argv[2], argv[3], maxproc, maxmem, maxdisk, "sh");
+       } else {
+           printf("invalid arguments");
+       }
     } else {
         printf("command not found");
     }

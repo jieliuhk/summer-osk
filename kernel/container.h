@@ -3,12 +3,12 @@ enum contstate { CUNUSED, CEMBRYO, CREADY, CRUNNABLE, CRUNNING, CPAUSED, CSTOPPI
 struct cont {
     struct spinlock lock;	
 	
-    uint msz;			// Max size of memory (bytes)
-    uint mdsk;			// Max amount of disk space (bytes)
+    int msz;			// Max size of memory (bytes)
+    int mdsk;			// Max amount of disk space (bytes)
     int mproc;			// Max amount of processes
     int udproc;			// Used processes
     int upg;			// Used pages of memory
-    uint udsk;			// Used disk space (blocks)
+    int udsk;			// Used disk space (blocks)
     int uproc;			// Used processes
     int cid;			// Container ID
     int nextcpid;		// Next containerized pid

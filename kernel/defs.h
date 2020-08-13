@@ -112,7 +112,7 @@ int             ksuspend(int, struct file *);
 int 		kresume(char *);
 
 // container.c
-int		ccreate(char *, int, uint64, uint64);
+int		ccreate(char *, int, int, int);
 int		cstart(char *);
 struct cont*	name2cont(char *);
 struct cont*    mycont();
