@@ -7,6 +7,7 @@
 #include "defs.h"
 #include "stat.h"
 #include "proc.h"
+#include "cinfo.h"
 
 struct {
 	struct spinlock lock;
@@ -55,18 +56,6 @@ alloccpid(struct cont *cont) {
 }
 
 struct cont*
-mycont() {
-    struct cont *c;
-
-    for(c = ctable.cont; c < &ctable.cont[NCONT]; c++)
-        if(c->state == CUNUSED) {
-	    return c;
-	}
-
-    return 0;
-}
-
-struct cont*
 cid2cont(int cid)
 {
     struct cont* c;
@@ -93,6 +82,25 @@ name2cont(char* name)
         }
     }
     return 0;
+}
+
+void getcinfo(uint64 ciaddr) {
+    struct cont* c;
+    struct cinfo ci;
+    int i;
+
+    acquire(&ctable.lock);
+    for (i = 0; i < NCONT; i++) {
+        c = &ctable.cont[i];
+        safestrcpy(ci.conts[i].name, c->name, 16);
+        ci.conts[i].state = c->state;
+        ci.conts[i].cid = c->cid;
+        ci.conts[i].udproc = c->udproc;
+    }
+    release(&ctable.lock);
+
+    ci.count = i;
+    copyout(myproc()->pagetable, ciaddr, (void *)&ci, sizeof(struct cinfo));
 }
 
 // Creates a container with the maximum procs, mem, and disk size

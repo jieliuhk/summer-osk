@@ -1,8 +1,4 @@
-enum contstate { CUNUSED, CEMBRYO, CREADY, CRUNNABLE, CRUNNING, CPAUSED, CSTOPPING };
-
-struct cont {
-    struct spinlock lock;
-	
+struct cdata {
     int msz;			// Max size of memory (bytes)
     int mdsk;			// Max amount of disk space (bytes)
     int mproc;			// Max amount of processes
@@ -12,11 +8,12 @@ struct cont {
     int uproc;			// Used processes
     int cid;			// Container ID
     int nextcpid;		// Next containerized pid
-    struct inode *rootdir;	// Root directory
-    enum contstate state;	// State of container
+    int state;		        // State of container
     char name[16];          	// Container name
-    struct proc *ptable;	// Table of processes owned by container
     int nextproc;		// Next proc to sched
 };
 
-
+struct cinfo {
+    uint    count;
+    struct  cdata conts[20];
+};

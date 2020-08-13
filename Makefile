@@ -140,6 +140,7 @@ UPROGS=\
 	$U/_vctest\
 	$U/_ctool\
 	$U/_freesize\
+	$U/_cinfo\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

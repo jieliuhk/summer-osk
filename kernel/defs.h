@@ -117,6 +117,7 @@ int		cstart(char *);
 struct cont*	name2cont(char *);
 struct cont*    mycont();
 int 		alloccpid(struct cont*);
+void 		getcinfo(uint64);
 
 // swtch.S
 void            swtch(struct context*, struct context*);

@@ -636,4 +636,25 @@ int sys_cstart(void)
     return cstart(name);
 }
 
+uint64
+sys_cinfo(void)
+{
+    uint64 ciaddr;
+
+    if(myproc()->cont != 0) {
+        printf("cinfo can only use at root");
+        return -1;
+    }
+
+    if(myproc()->tracing) {
+        printf("[%d]cinfo", myproc()->pid);
+    }
+
+    if(argaddr(0, &ciaddr) < 0) {
+	return -1;
+    }
+
+    getcinfo(ciaddr);
+    return 0;
+}
 

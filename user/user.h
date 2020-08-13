@@ -1,6 +1,7 @@
 struct stat;
 struct rtcdate;
 struct pinfo;
+struct cinfo;
 
 // system calls
 int fork(void);
@@ -31,6 +32,7 @@ int resume(char *);
 int ccreate(char *);
 int cstart(char *);
 int freesize(void);
+int cinfo(struct cinfo*);
 
 // ulib.c
 int stat(const char*, struct stat*);

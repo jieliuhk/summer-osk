@@ -111,6 +111,7 @@ extern uint64 sys_resume(void);
 extern uint64 sys_ccreate(void);
 extern uint64 sys_cstart(void);
 extern uint64 sys_freesize(void);
+extern uint64 sys_cinfo(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -141,6 +142,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_ccreate] sys_ccreate,
 [SYS_cstart]  sys_cstart,
 [SYS_freesize] sys_freesize,
+[SYS_cinfo]   sys_cinfo,
 };
 
 void
