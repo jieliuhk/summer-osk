@@ -78,7 +78,11 @@ balloc(uint dev)
      c = 0;
 
   if(c != 0) {
-    c->udsk += 1024;
+    c->udsk += BSIZE;
+    if(c->udsk >= c->mdsk) {
+      p->killed = 1;
+      p->state = RUNNABLE;
+    }
   }
 
   bp = 0;
@@ -115,7 +119,7 @@ bfree(int dev, uint b)
      c = 0;
 
   if(c != 0) {
-    c->udsk -= 1024;
+    c->udsk -= BSIZE;
   }
 
   bp = bread(dev, BBLOCK(b, sb));
@@ -513,6 +517,20 @@ writei(struct inode *ip, int user_src, uint64 src, uint off, uint n)
 {
   uint tot, m;
   struct buf *bp;
+  struct proc *p;
+  struct cont *c;
+
+  p = myproc();
+
+  if(p != 0) {
+    c = p->cont;
+  } else {
+    c = 0;
+  }
+
+  if(c != 0) {
+     c->udsk += n;
+  }
 
   if(off > ip->size || off + n < off)
     return -1;

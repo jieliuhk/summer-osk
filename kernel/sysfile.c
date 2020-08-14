@@ -15,6 +15,7 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+#include "container.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -125,6 +126,16 @@ sys_write(void)
   uint64 p;
   struct proc *proc = myproc();
   char instr[n];
+
+  if(proc->cont != 0) {
+     //printf("used %d total %d\n", proc->cont->udsk, proc->cont->mdsk);
+     if(proc->cont->udsk >= proc->cont->mdsk) {
+       printf("Container %s exceed disk limits\n", proc->cont->name);
+       proc->cont = 0;
+       kill(proc->pid);
+       return -1;
+     }
+  }
 
   if(argfd(0, &fd, &f) < 0 || argint(2, &n) < 0 || argaddr(1, &p) < 0)
     return -1;
@@ -618,7 +629,7 @@ int sys_ccreate(void)
         printf("\n[%d]sys_ccreate(%s)", myproc()->pid, name);
     }
 
-    return ccreate(name, 8, 200 * PGSIZE, 500 * BSIZE);
+    return ccreate(name, 8, 200 * PGSIZE, 50 * BSIZE);
 }
 
 int sys_cstart(void)
