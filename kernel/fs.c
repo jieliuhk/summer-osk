@@ -68,6 +68,18 @@ balloc(uint dev)
 {
   int b, bi, m;
   struct buf *bp;
+  struct proc *p;
+  struct cont *c;
+
+  p = myproc();
+  if(p != 0)
+     c = p->cont;
+  else
+     c = 0;
+
+  if(c != 0) {
+    c->udsk += 1024;
+  }
 
   bp = 0;
   for(b = 0; b < sb.size; b += BPB){
@@ -93,6 +105,18 @@ bfree(int dev, uint b)
 {
   struct buf *bp;
   int bi, m;
+  struct proc *p;
+  struct cont *c;
+
+  p = myproc();
+  if(p != 0)
+     c = p->cont;
+  else
+     c = 0;
+
+  if(c != 0) {
+    c->udsk -= 1024;
+  }
 
   bp = bread(dev, BBLOCK(b, sb));
   bi = b % BPB;

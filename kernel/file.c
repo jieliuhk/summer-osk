@@ -12,6 +12,7 @@
 #include "file.h"
 #include "stat.h"
 #include "proc.h"
+#include "container.h"
 
 struct devsw devsw[NDEV];
 struct {
@@ -135,6 +136,8 @@ int
 filewrite(struct file *f, uint64 addr, int is_user, int n)
 {
   int r, ret = 0;
+  struct proc *p;
+  struct cont *c;
 
   if(f->writable == 0)
     return -1;
@@ -152,6 +155,19 @@ filewrite(struct file *f, uint64 addr, int is_user, int n)
     // and 2 blocks of slop for non-aligned writes.
     // this really belongs lower down, since writei()
     // might be writing a device like the console.
+    p = myproc();
+    if(p != 0)
+      c = p->cont;
+    else
+      c = 0;
+
+    if(c != 0) {
+      if(c->udsk >= c->mdsk) {
+        printf("exceed container max disk");
+	return -1;
+      }
+    }
+    
     int max = ((MAXOPBLOCKS-1-1-2) / 2) * BSIZE;
     int i = 0;
     while(i < n){
