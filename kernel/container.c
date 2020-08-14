@@ -158,3 +158,27 @@ cstart(char* name)
 
     return 0;
 }
+
+int
+cstop(char* name) 
+{
+    struct cont *c;
+
+    if((c = name2cont(name)) == 0) {
+        printf("container %s not found", name); 
+    }
+
+    killall(c);
+
+    acquire(&ctable.lock);
+    c->mproc = 0;
+    c->msz = 0;
+    c->mdsk = 0;
+    c->rootdir = 0;
+    strncpy(c->name, "\0", 16);
+    c->state = UNUSED;
+    release(&ctable.lock);
+
+    return 0;
+}
+

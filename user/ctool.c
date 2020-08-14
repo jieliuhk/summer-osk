@@ -77,8 +77,8 @@ void create(char * name)
     //if (cp(name, "kill") != 1) 
         //printf("Failed to copy kill");
 
-    if (cp(name, "freesize") != 1) 
-        printf("Failed to copy freesize");
+    //if (cp(name, "freesize") != 1) 
+        //printf("Failed to copy freesize");
 }
 
 void start(char * name, char * vc, int maxproc, int maxmem, int maxdisk, char * prog)
@@ -134,6 +134,8 @@ int main(int argc, char *argv[])
        } else {
            printf("invalid arguments");
        }
+    } else if(strncmp(argv[1],  "cstop", 16) == 0) {
+       cstop(argv[2]);
     } else {
         printf("command not found");
     }

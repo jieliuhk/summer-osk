@@ -44,5 +44,6 @@ entry("ccreate");
 entry("cstart");
 entry("freesize");
 entry("cinfo");
+entry("cstop");
 
 

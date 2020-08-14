@@ -28,3 +28,4 @@
 #define SYS_cstart  27
 #define SYS_freesize 28
 #define SYS_cinfo 29
+#define SYS_cstop 30

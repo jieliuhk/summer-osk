@@ -636,6 +636,21 @@ int sys_cstart(void)
     return cstart(name);
 }
 
+int sys_cstop(void)
+{
+    char name[16];
+    
+    if(argstr(0, name, 16) < 0) {
+        return -1;
+    }
+    
+    if(myproc()->tracing) {
+        printf("\n[%d]sys_cstop(%s)", myproc()->pid, name);
+    }
+
+    return cstop(name);
+}
+
 uint64
 sys_cinfo(void)
 {

@@ -31,6 +31,7 @@ int suspend(int, int);
 int resume(char *);
 int ccreate(char *);
 int cstart(char *);
+int cstop(char *);
 int freesize(void);
 int cinfo(struct cinfo*);
 
