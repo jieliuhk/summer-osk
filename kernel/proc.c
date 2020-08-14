@@ -804,6 +804,28 @@ void kps (uint64 piaddr)
     copyout(myproc()->pagetable, piaddr, (void *)&kpi, sizeof(struct pinfo));
 }
 
+void getpauseprocess(struct cont *c, struct pinfo *pi) {
+    struct proc *p;
+    int i = 0;
+
+    for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        
+        if(p->cont == c) {
+	    if(p->state != UNUSED) {
+		pi->proc[i].pid = p->pid;
+                pi->proc[i].sz = p->sz;
+                safestrcpy(pi->proc[i].name, p->name, 16);
+                i++;
+	    }
+        }
+        release(&p->lock);
+    }
+
+    pi->count = i;
+}
+
+
 int ksuspend (int pid, struct file *f) {
     struct header hdr;
     struct proc *dstp, *curp;
@@ -854,11 +876,6 @@ int ksuspend (int pid, struct file *f) {
     kill(pid);
 
     return 0;
-}
-
-int suspendall(struct cont *cont) {
-  
- return 0;
 }
 
 int kresume (char *path) {

@@ -29,3 +29,4 @@
 #define SYS_freesize 28
 #define SYS_cinfo 29
 #define SYS_cstop 30
+#define SYS_cpause 31

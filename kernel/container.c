@@ -8,6 +8,7 @@
 #include "stat.h"
 #include "proc.h"
 #include "cinfo.h"
+#include "pinfo.h"
 
 struct {
 	struct spinlock lock;
@@ -186,15 +187,17 @@ cstop(char* name)
 }
 
 int
-cpause(char* name) 
+cpause(char *name, uint64 piaddr)
 {
     struct cont *c;
+    struct pinfo pi;
 
     if((c = name2cont(name)) == 0) {
         printf("container %s not found", name); 
     }
 
-    //suspendall(c);
+    getpauseprocess(c, &pi);
+    copyout(myproc()->pagetable, piaddr, (void *)&pi, sizeof(struct pinfo));
 
     acquire(&c->lock);
     c->state = CPAUSED;

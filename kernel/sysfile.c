@@ -651,6 +651,27 @@ int sys_cstop(void)
     return cstop(name);
 }
 
+int sys_cpause(void)
+{
+    char name[16];
+    uint64 piaddr;
+
+    if(myproc()->cont != 0) {
+        printf("cpause can only run on root");
+        return -1;
+    }
+
+    if(argstr(0, name, 16) < 0 || argaddr(0, &piaddr) < 0) {
+        return -1;
+    }
+    
+    if(myproc()->tracing) {
+        printf("\n[%d]sys_cpause(%s)", myproc()->pid, name);
+    }
+
+    return cpause(name, piaddr);
+}
+
 uint64
 sys_cinfo(void)
 {

@@ -45,5 +45,7 @@ entry("cstart");
 entry("freesize");
 entry("cinfo");
 entry("cstop");
+entry("cpause");
+
 
 

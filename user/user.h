@@ -32,6 +32,7 @@ int resume(char *);
 int ccreate(char *);
 int cstart(char *);
 int cstop(char *);
+int cpause(char *, struct pinfo*);
 int freesize(void);
 int cinfo(struct cinfo*);
 

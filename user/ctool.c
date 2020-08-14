@@ -2,6 +2,7 @@
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include "kernel/pinfo.h"
 
 int strncmp(const char *p, const char *q, uint n)
 {
