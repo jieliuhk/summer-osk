@@ -104,8 +104,9 @@ kalloc(void)
      acquire(&c->lock);
      maxpg = (c->msz) / PGSIZE;
      if((c->upg + 1) > maxpg) {
-        printf("\nNot enough memory for container %s", c->name);
-        return 0;
+        printf("\nNot enough memory for container %s\n", c->name);
+        release(&c->lock);
+	return 0;
      }
      c->upg += 1;
      release(&c->lock);

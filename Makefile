@@ -142,6 +142,7 @@ UPROGS=\
 	$U/_freesize\
 	$U/_cinfo\
 	$U/_cpause\
+	$U/_membomb\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
