@@ -129,7 +129,7 @@ name2cont(char* name)
 void getcinfo(uint64 ciaddr) {
     struct cont* c;
     struct cinfo ci;
-    int i;
+    int i, j, pid, count;
 
     acquire(&ctable.lock);
     for (i = 0; i < NCONT; i++) {
@@ -138,6 +138,20 @@ void getcinfo(uint64 ciaddr) {
         ci.conts[i].state = c->state;
         ci.conts[i].cid = c->cid;
         ci.conts[i].udproc = c->udproc;
+        ci.conts[i].upg = c->upg;
+        ci.conts[i].udsk = c->udsk;
+        ci.conts[i].mproc = c->mproc;
+        ci.conts[i].msz = c->msz;
+        ci.conts[i].mdsk = c->mdsk;
+        ci.conts[i].udproc = c->udproc;
+        for(j = 0, count = 0; j < 16; j++) {
+           pid = c->ptable[j];
+           if(pid > 0) {
+              ci.conts[i].procs.proc[count] = pid;
+              count++;
+           }
+        }
+        ci.conts[i].procs.count = count;
     }
     release(&ctable.lock);
 
@@ -224,9 +238,13 @@ cstop(char* name)
     killall(c);
 
     acquire(&c->lock);
+    c->cid = 0;
     c->mproc = 0;
     c->msz = 0;
     c->mdsk = 0;
+    c->udproc = 0;
+    c->upg = 0;
+    c->udsk = 0;
     c->rootdir = 0;
     strncpy(c->name, "\0", 16);
     c->state = UNUSED;
