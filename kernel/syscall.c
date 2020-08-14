@@ -114,6 +114,7 @@ extern uint64 sys_freesize(void);
 extern uint64 sys_cinfo(void);
 extern uint64 sys_cstop(void);
 extern uint64 sys_cpause(void);
+extern uint64 sys_df(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -147,6 +148,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_cinfo]   sys_cinfo,
 [SYS_cstop]   sys_cstop,
 [SYS_cpause]   sys_cpause,
+[SYS_df]   sys_df
 };
 
 void

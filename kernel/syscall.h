@@ -30,3 +30,4 @@
 #define SYS_cinfo 29
 #define SYS_cstop 30
 #define SYS_cpause 31
+#define SYS_df 31

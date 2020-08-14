@@ -34,6 +34,7 @@ int cstart(char *);
 int cstop(char *);
 int cpause(char *, struct pinfo*);
 int freesize(void);
+int df(void);
 int cinfo(struct cinfo*);
 
 // ulib.c

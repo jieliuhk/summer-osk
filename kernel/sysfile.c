@@ -705,3 +705,13 @@ sys_cinfo(void)
     return 0;
 }
 
+
+uint64
+sys_df(void)
+{
+    if(myproc()->cont == 0) {
+        return 0;
+    } else {
+        return myproc()->cont->mdsk - myproc()->cont->udsk;
+    }
+}

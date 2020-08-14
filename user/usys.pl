@@ -43,6 +43,7 @@ entry("resume");
 entry("ccreate");
 entry("cstart");
 entry("freesize");
+entry("df");
 entry("cinfo");
 entry("cstop");
 entry("cpause");
