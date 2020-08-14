@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     }
     printf("CID   Name     State       Used Process\n");
     for(i = 0; i < ci.count; i++) {
-        printf("%d  |   %s       |  %d    | %d \n", ci.conts[i].cid, ci.conts[i].name, ci.conts[i].state, ci.conts[i].msz);
+        printf("%d  |   %s       |  %d    | %d \n", ci.conts[i].cid, ci.conts[i].name, ci.conts[i].state, ci.conts[i].udproc);
     }
     exit(0);
 }

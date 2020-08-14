@@ -111,11 +111,14 @@ void		kps(uint64);
 int             ksuspend(int, struct file *);
 int 		kresume(char *);
 int 		killall(struct cont*);
+int 		suspendall(struct cont*);
+int 		resumeall(struct cont*);
 
 // container.c
 int		ccreate(char *, int, int, int);
 int		cstart(char *);
 int		cstop(char *);
+int             cpause(char *);
 struct cont*	name2cont(char *);
 struct cont*    mycont();
 int 		alloccpid(struct cont*);

@@ -695,20 +695,11 @@ killall(struct cont *cont) {
   struct proc *p;
 
   for(p = proc; p < &proc[NPROC]; p++){
-    acquire(&p->lock);
-    
     if(p->cont == cont){
-      p->killed = 1;
-      if(p->state == SLEEPING || p->state == SUSPENDED){
-        // Wake process from sleep().
-        p->state = RUNNABLE;
-      }
-      release(&p->lock);
-      return 0;
+        kill(p->pid);
     }
-    release(&p->lock);
   }
-  return -1;
+  return 0;
 }
 
 // Copy to either a user address, or kernel address,
@@ -863,6 +854,11 @@ int ksuspend (int pid, struct file *f) {
     kill(pid);
 
     return 0;
+}
+
+int suspendall(struct cont *cont) {
+  
+ return 0;
 }
 
 int kresume (char *path) {

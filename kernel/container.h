@@ -1,4 +1,4 @@
-enum contstate { CUNUSED, CEMBRYO, CREADY, CRUNNABLE, CRUNNING, CPAUSED, CSTOPPING };
+enum contstate { CUNUSED, CEMBRYO, CREADY, CRUNNING, CPAUSED};
 
 struct cont {
     struct spinlock lock;

@@ -134,11 +134,14 @@ ccreate(char* name, int mproc, int msz, int mdsk)
     nc->msz = msz;
     nc->mdsk = mdsk;
     nc->rootdir = idup(rootdir);
+    nc->upg = 0;
+    nc->udproc = 1;
+    nc->udsk = 0;
     strncpy(nc->name, name, 16);
     nc->state = CREADY;
     release(&ctable.lock);
 
-    return 1;  
+    return 1;
 }
 
 // Sets a container to be scheduled
@@ -170,14 +173,50 @@ cstop(char* name)
 
     killall(c);
 
-    acquire(&ctable.lock);
+    acquire(&c->lock);
     c->mproc = 0;
     c->msz = 0;
     c->mdsk = 0;
     c->rootdir = 0;
     strncpy(c->name, "\0", 16);
     c->state = UNUSED;
-    release(&ctable.lock);
+    release(&c->lock);
+
+    return 0;
+}
+
+int
+cpause(char* name) 
+{
+    struct cont *c;
+
+    if((c = name2cont(name)) == 0) {
+        printf("container %s not found", name); 
+    }
+
+    //suspendall(c);
+
+    acquire(&c->lock);
+    c->state = CPAUSED;
+    release(&c->lock);
+
+    return 0;
+}
+
+int
+cresume(char* name) 
+{
+    struct cont *c;
+
+    if((c = name2cont(name)) == 0) {
+        printf("container %s not found", name); 
+    }
+
+    //resumeall(c);
+
+    acquire(&c->lock);
+    c->state = CRUNNING;
+    release(&c->lock);
 
     return 0;
 }
