@@ -15,7 +15,7 @@ struct cont {
     struct inode *rootdir;	// Root directory
     enum contstate state;	// State of container
     char name[16];          	// Container name
-    struct proc *ptable;	// Table of processes owned by container
+    int ptable[16];		// Table of processes PID owned by container
     int nextproc;		// Next proc to sched
 };
 

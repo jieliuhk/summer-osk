@@ -183,7 +183,8 @@ static void
 freeproc(struct proc *p)
 {
   if(p->cont != 0) {
-    if(p->cont->udproc -1 >= 0)
+   freecproc(p->cont, p->pid);
+   if(p->cont->udproc -1 >= 0)
       p->cont->udproc -= 1;
   }
 
@@ -337,6 +338,7 @@ fork(void)
   
   if(np->cont != 0) {
     np->cpid = alloccpid(np->cont);
+    alloccproc(np->cont, np->pid);
   }
 
   safestrcpy(np->name, p->name, sizeof(p->name));
@@ -496,6 +498,33 @@ wait(uint64 addr)
   }
 }
 
+int
+canrun(struct proc *p) {
+  int next;
+  if(p->state != RUNNABLE) {
+    return 0;
+  }
+
+  if(p->cont == 0) {
+    return 1;
+  }
+
+  if(p->cont->state == CUNUSED || p->cont->state == CPAUSED) {
+    return 0;
+  }
+
+  next = p->cont->nextproc;
+  if(p->cont->ptable[next] == p->pid) {
+    updatenextpidrun(p->cont);
+    return 1;
+  }
+
+  if(p->cont->ptable[next] == -1) {
+    updatenextpidrun(p->cont);
+  }
+  return 1;
+}
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -516,7 +545,7 @@ scheduler(void)
 
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
-      if(p->state == RUNNABLE) {
+      if(canrun(p)) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.

@@ -56,6 +56,47 @@ alloccpid(struct cont *cont) {
   return cpid;
 }
 
+int
+alloccproc(struct cont *cont, int pid) {
+  int i;
+
+  for(i = 0; i < 16; i++) {
+      if(cont->ptable[i] == -1) {
+        cont->ptable[i] = pid;
+        return 0;
+      }
+  }
+  
+  return -1;
+}
+
+int
+freecproc(struct cont *cont, int pid) {
+  int i;
+
+  for(i = 0; i < 16; i++) {
+      if(cont->ptable[i] == pid) {
+        cont->ptable[i] = -1;
+        return 0;
+      }
+  }
+  
+  return -1;
+}
+
+void
+updatenextpidrun(struct cont *cont) {
+  int i;
+
+  for(i = cont->nextproc + 1; i < 16; i++) {
+    if(cont->ptable[i] != -1) {
+      break;
+    }
+  }
+
+  cont->nextproc = i % 16;
+}
+
 struct cont*
 cid2cont(int cid)
 {
@@ -110,6 +151,7 @@ ccreate(char* name, int mproc, int msz, int mdsk)
 {
     struct cont *nc;
     struct inode* rootdir;
+    int i;
 
     // Check if container name already exists
     if (name2cont(name))
@@ -130,7 +172,7 @@ ccreate(char* name, int mproc, int msz, int mdsk)
         return -1;
     }
 
-    acquire(&ctable.lock);
+    acquire(&nc->lock);
     nc->mproc = mproc;
     nc->msz = msz;
     nc->mdsk = mdsk;
@@ -140,7 +182,11 @@ ccreate(char* name, int mproc, int msz, int mdsk)
     nc->udsk = 0;
     strncpy(nc->name, name, 16);
     nc->state = CREADY;
-    release(&ctable.lock);
+    for(i = 0; i < 16; i++) {
+        nc->ptable[i] = -1;
+    }
+    nc->nextproc = 0;
+    release(&nc->lock);
 
     return 1;
 }
@@ -156,6 +202,9 @@ cstart(char* name)
     if((c = name2cont(name)) == 0) {
         printf("container %s not found", name); 
     }
+
+    c->nextproc = 0;
+    c->ptable[0] = p->pid;
 
     p->cwd = idup(c->rootdir);
     p->cont = c;
